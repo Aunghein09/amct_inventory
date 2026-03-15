@@ -30,7 +30,7 @@ steps:
 
 substitutions:
   _SERVICE: amct-inventory
-  _REGION: asia-southeast1
+  _REGION: asia-southeast2
   _REPO: amct-inventory
 
 images:
