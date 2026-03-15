@@ -1,10 +1,13 @@
+import io
 import uuid
 from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
 from django.db import models
 from django.db.models import Q
+from PIL import Image as PILImage
 
 
 class Product(models.Model):
@@ -26,6 +29,9 @@ class Product(models.Model):
         (SIZE_3XL, "3XL"),
         (SIZE_CUSTOM, "Custom"),
     )
+
+    MAX_IMAGE_SIZE = (800, 800)
+    IMAGE_QUALITY = 85
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     sku = models.CharField(max_length=64, unique=True)
@@ -61,6 +67,24 @@ class Product(models.Model):
             raise ValidationError("Wholesale selling price cannot be lower than cost.")
         if self.accessory_price is not None and self.accessory_price < 0:
             raise ValidationError("Accessory price cannot be negative.")
+
+    def save(self, *args, **kwargs):
+        if self.image:
+            self._compress_image()
+        super().save(*args, **kwargs)
+
+    def _compress_image(self):
+        try:
+            img = PILImage.open(self.image)
+        except Exception:
+            return
+        img.thumbnail(self.MAX_IMAGE_SIZE, PILImage.LANCZOS)
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=self.IMAGE_QUALITY, optimize=True)
+        name = self.image.name.rsplit(".", 1)[0] + ".jpg"
+        self.image = ContentFile(buf.getvalue(), name=name)
 
     @property
     def display_size(self):
