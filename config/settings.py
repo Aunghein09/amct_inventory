@@ -119,6 +119,16 @@ STORAGES = {
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Google Cloud Storage for media files (production)
+GS_BUCKET_NAME = os.getenv("GS_BUCKET_NAME")
+if GS_BUCKET_NAME:
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+    }
+    GS_DEFAULT_ACL = None
+    GS_QUERYSTRING_AUTH = False
+    MEDIA_URL = f"https://storage.googleapis.com/{GS_BUCKET_NAME}/"
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = "login"
