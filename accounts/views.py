@@ -8,8 +8,12 @@ class CustomLoginView(auth_views.LoginView):
 
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            next_url = request.GET.get("next", "/")
-            return redirect(next_url)
+            next_url = request.GET.get("next")
+            if next_url:
+                return redirect(next_url)
+            if request.user.is_staff:
+                return redirect("/admin/")
+            return redirect("/")
         return super().get(request, *args, **kwargs)
 
 
