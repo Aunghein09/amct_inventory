@@ -29,6 +29,10 @@ def _get_role(request):
 
 @login_required
 def dashboard(request):
+    # If user logged in via Admin tab, redirect to admin panel
+    if request.session.get("login_dest") == "/admin/":
+        return redirect("/admin/")
+
     role = _get_role(request)
     if role is None:
         return render(request, "accounts/no_membership.html")

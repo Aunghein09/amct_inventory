@@ -6,6 +6,7 @@ from django.contrib.admin import AdminSite
 from django.contrib.admin.apps import AdminConfig
 from django.db.models import DecimalField, Sum, Value
 from django.db.models.functions import Coalesce
+from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path
 from django.utils import timezone
@@ -15,6 +16,12 @@ class InventoryAdminSite(AdminSite):
     site_header = "AMCT Inventory"
     site_title = "AMCT Inventory Admin"
     index_title = "Site administration"
+
+    def logout(self, request, extra_context=None):
+        """Redirect admin logout to the tabbed login page."""
+        from django.contrib.auth import logout
+        logout(request)
+        return redirect("login")
 
     def get_urls(self):
         custom_urls = [
