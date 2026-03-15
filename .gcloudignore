@@ -1,0 +1,11 @@
+.venv/
+venv/
+__pycache__/
+.git/
+.gitignore
+.env
+db.sqlite3
+media/
+staticfiles/
+.DS_Store
+.vscode/

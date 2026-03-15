@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h2>Current Inventory (Computed)</h2>
+  <p class="muted">Current stock is computed from SUM of stock moves.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>SKU</th>
+        <th>Shop Code</th>
+        <th>Name</th>
+        <th>Current Stock</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in stock_rows %}
+      <tr>
+        <td>{{ row.sku }}</td>
+        <td>{{ row.shop_code|default:"-" }}</td>
+        <td>{{ row.name }}</td>
+        <td>{{ row.current_stock }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4">No products yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

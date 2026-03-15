@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<section class="card" style="max-width: 420px; margin-inline: auto;">
+  <div style="display:flex; border-bottom:2px solid var(--line); margin-bottom:1rem;">
+    <button type="button" class="tab-btn active" onclick="switchTab('member')" id="tab-member"
+      style="flex:1; padding:0.6rem; font:inherit; font-weight:600; cursor:pointer;
+             border:none; background:none; border-bottom:2px solid var(--brand); color:var(--brand); margin-bottom:-2px;">
+      Member
+    </button>
+    <button type="button" class="tab-btn" onclick="switchTab('admin')" id="tab-admin"
+      style="flex:1; padding:0.6rem; font:inherit; font-weight:600; cursor:pointer;
+             border:none; background:none; border-bottom:2px solid transparent; color:var(--muted); margin-bottom:-2px;">
+      Admin
+    </button>
+  </div>
+
+  <p class="muted" id="tab-desc">Log in to access inventory functions.</p>
+
+  <form method="post" id="login-form">
+    {% csrf_token %}
+    <input type="hidden" name="next" id="login-next" value="/">
+    {% for field in form %}
+      <div class="form-row">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% for err in field.errors %}
+          <small class="message error">{{ err }}</small>
+        {% endfor %}
+      </div>
+    {% endfor %}
+    {% if form.non_field_errors %}
+      {% for err in form.non_field_errors %}
+        <div class="message error">{{ err }}</div>
+      {% endfor %}
+    {% endif %}
+    <button class="primary" type="submit" style="width:100%;">Login</button>
+  </form>
+</section>
+
+<script>
+function switchTab(tab) {
+  const memberBtn = document.getElementById('tab-member');
+  const adminBtn  = document.getElementById('tab-admin');
+  const nextInput = document.getElementById('login-next');
+  const desc      = document.getElementById('tab-desc');
+
+  if (tab === 'admin') {
+    adminBtn.style.borderBottomColor = 'var(--brand)';
+    adminBtn.style.color = 'var(--brand)';
+    memberBtn.style.borderBottomColor = 'transparent';
+    memberBtn.style.color = 'var(--muted)';
+    nextInput.value = '/admin/';
+    desc.textContent = 'Log in to access the admin panel.';
+  } else {
+    memberBtn.style.borderBottomColor = 'var(--brand)';
+    memberBtn.style.color = 'var(--brand)';
+    adminBtn.style.borderBottomColor = 'transparent';
+    adminBtn.style.color = 'var(--muted)';
+    nextInput.value = '/';
+    desc.textContent = 'Log in to access inventory functions.';
+  }
+}
+</script>
+{% endblock %}

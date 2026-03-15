@@ -1,0 +1,60 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Inventory Dashboard{% endblock %}
+
+{% block nav-breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a>
+  &rsaquo; <a href="{% url 'admin:app_list' 'inventory' %}">Inventory</a>
+  &rsaquo; Dashboard
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+
+  <div class="module" style="margin-bottom:20px;">
+    <h2>Summary</h2>
+    <table style="width:auto; margin:10px 0;">
+      <tr><td style="padding:4px 16px 4px 0;"><strong>Active Products:</strong></td><td>{{ product_count }}</td></tr>
+      <tr><td style="padding:4px 16px 4px 0;"><strong>Total Stock Moves:</strong></td><td>{{ move_count }}</td></tr>
+    </table>
+  </div>
+
+  <div class="module">
+    <h2>Current Stock (Computed)</h2>
+    <table id="result_list">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Shop Code</th>
+          <th>Name</th>
+          <th>Size</th>
+          <th>Cost</th>
+          <th>Retail</th>
+          <th>Wholesale</th>
+          <th>Current Stock</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in stock_rows %}
+        <tr class="{% cycle 'row1' 'row2' %}">
+          <td>{{ row.sku }}</td>
+          <td>{{ row.shop_code|default:"-" }}</td>
+          <td>{{ row.name }}</td>
+          <td>{{ row.display_size }}</td>
+          <td>{{ row.cost }}</td>
+          <td>{{ row.selling_price1 }}</td>
+          <td>{{ row.selling_price2|default:"-" }}</td>
+          <td>{{ row.current_stock }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8">No active products.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

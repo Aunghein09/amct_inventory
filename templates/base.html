@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Inventory{% endblock %}</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --surface: #ffffff;
+      --text: #22252a;
+      --muted: #68707d;
+      --line: #dce1e8;
+      --brand: #0b5ed7;
+      --danger: #c62828;
+      --ok: #1b8f3a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .container {
+      width: min(1040px, 92vw);
+      margin: 0 auto;
+      padding: 1rem 0 2rem;
+    }
+    .topnav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+    .topnav .container {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+    }
+    .brand {
+      font-weight: 700;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .links {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .links a, .links button {
+      font: inherit;
+      border: 1px solid var(--line);
+      padding: 0.4rem 0.75rem;
+      background: var(--surface);
+      border-radius: 6px;
+      text-decoration: none;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .links .primary {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      padding: 0.5rem 0.4rem;
+      vertical-align: top;
+    }
+    .form-row {
+      display: grid;
+      gap: 0.35rem;
+      margin-bottom: 0.85rem;
+    }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0.5rem 0.6rem;
+      font: inherit;
+      background: #fff;
+    }
+    .message {
+      border-radius: 6px;
+      padding: 0.5rem 0.7rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+    .message.success { background: #e9f8ee; color: var(--ok); border: 1px solid #bce7c9; }
+    .message.error { background: #fdecec; color: var(--danger); border: 1px solid #f4c3c3; }
+    .muted { color: var(--muted); }
+    .grid-2 {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+  </style>
+</head>
+<body>
+  <header class="topnav">
+    <div class="container">
+      <a class="brand" href="{% url 'inventory:dashboard' %}">AMCT Inventory</a>
+      <nav class="links">
+        {% if request.user.is_authenticated %}
+          <a href="{% url 'inventory:dashboard' %}">Dashboard</a>
+          <a href="{% url 'inventory:stock_move_list' %}">Moves</a>
+          <a href="{% url 'inventory:stock_receive_create' %}">Receive</a>
+          <a href="{% url 'inventory:stock_sale_create' %}">Sale</a>
+          <form action="{% url 'logout' %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit">Logout</button>
+          </form>
+        {% else %}
+          <a class="primary" href="{% url 'login' %}">Login</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

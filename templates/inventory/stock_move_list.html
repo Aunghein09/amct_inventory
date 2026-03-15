@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Moves{% endblock %}
+
+{% block content %}
+<section class="card">
+  <div style="display:flex; justify-content:space-between; gap:1rem; align-items:center; flex-wrap:wrap;">
+    <div>
+      <h1>Movement History</h1>
+      <p class="muted">Stock ledger</p>
+    </div>
+    <div class="links">
+      <a class="primary" href="{% url 'inventory:stock_receive_create' %}">Record Receive</a>
+      <a class="primary" href="{% url 'inventory:stock_sale_create' %}">Record Sale</a>
+    </div>
+  </div>
+
+  <!-- Date Filter -->
+  <form method="get" style="display:flex; gap:0.75rem; align-items:end; margin:1rem 0; flex-wrap:wrap;">
+    <div class="form-row" style="margin-bottom:0;">
+      <label for="date_from">From</label>
+      <input type="date" id="date_from" name="date_from" value="{{ date_from }}">
+    </div>
+    <div class="form-row" style="margin-bottom:0;">
+      <label for="date_to">To</label>
+      <input type="date" id="date_to" name="date_to" value="{{ date_to }}">
+    </div>
+    <button class="primary" type="submit" style="padding:0.5rem 1rem; border:1px solid var(--brand); background:var(--brand); color:#fff; border-radius:6px; cursor:pointer; font:inherit;">Filter</button>
+    {% if date_from or date_to %}
+      <a href="{% url 'inventory:stock_move_list' %}" style="padding:0.5rem 0.75rem; font:inherit;">Clear</a>
+    {% endif %}
+  </form>
+
+  <!-- Summary -->
+  <div class="grid-2" style="margin-bottom:1rem;">
+    <div class="card" style="margin-top:0;">
+      <strong>Received:</strong> {{ summary.total_receive }}<br>
+      <strong>Sold:</strong> {{ summary.total_sale }}<br>
+      <strong>Adjusted:</strong> {{ summary.total_adjust }}
+    </div>
+    <div class="card" style="margin-top:0;">
+      <strong>Net Change:</strong> {{ summary.net_change }}<br>
+      <strong>Moves:</strong> {{ moves|length }}
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Product</th>
+        <th>Location</th>
+        <th>Qty Delta</th>
+        <th>Reason</th>
+        <th>Note</th>
+        <th>Reference</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for move in moves %}
+      <tr>
+        <td>{{ move.created_at }}</td>
+        <td>{{ move.product.sku }} - {{ move.product.name }}</td>
+        <td>{{ move.location|default:"-" }}</td>
+        <td>{{ move.qty_delta }}</td>
+        <td>{{ move.reason }}</td>
+        <td>{{ move.note|default:"-" }}</td>
+        <td>{{ move.reference_id|default:"-" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7">No stock moves recorded yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

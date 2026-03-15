@@ -1,0 +1,164 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Daily Voucher — {{ selected_date }}{% endblock %}
+
+{% block nav-breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a>
+  &rsaquo; <a href="{% url 'admin:app_list' 'inventory' %}">Inventory</a>
+  &rsaquo; Daily Voucher
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+
+  {# Date picker #}
+  <div class="module" style="margin-bottom:20px;">
+    <h2>Select Date</h2>
+    <form method="get" style="padding:10px;">
+      <input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}"
+             style="padding:6px 10px; font-size:14px;">
+      <input type="submit" value="Go" class="default" style="margin-left:8px; padding:6px 16px;">
+    </form>
+  </div>
+
+  <div id="voucher-content">
+
+  {% if voucher %}
+  <div class="module" style="margin-bottom:20px; background:#d4edda; border-left:4px solid #28a745;">
+    <h2 style="color:#155724;">&#10003; Finalized</h2>
+    <table style="width:auto; margin:10px 0;">
+      <tr><td style="padding:4px 16px 4px 0;"><strong>Payment Method:</strong></td><td>{{ voucher.get_payment_method_display }}</td></tr>
+      <tr><td style="padding:4px 16px 4px 0;"><strong>Payment Date:</strong></td><td>{{ voucher.payment_date }}</td></tr>
+      <tr><td style="padding:4px 16px 4px 0;"><strong>Finalized By:</strong></td><td>{{ voucher.finalized_by }}</td></tr>
+      <tr><td style="padding:4px 16px 4px 0;"><strong>Finalized At:</strong></td><td>{{ voucher.finalized_at }}</td></tr>
+    </table>
+  </div>
+  {% endif %}
+
+  {# Sales line items #}
+  <div class="module" style="margin-bottom:20px;">
+    <h2>Sales — {{ selected_date|date:"d M Y" }}</h2>
+    <table id="result_list" style="width:100%;">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Product</th>
+          <th>Price Tier</th>
+          <th style="text-align:right;">Rate</th>
+          <th style="text-align:right;">Qty</th>
+          <th style="text-align:right;">Amount</th>
+          <th style="text-align:right;">Accessory Deduct</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in line_items %}
+        <tr class="{% cycle 'row1' 'row2' %}">
+          <td>{{ forloop.counter }}</td>
+          <td>{{ item.product.sku }} — {{ item.product.name }}</td>
+          <td>{{ item.price_tier|title }}</td>
+          <td style="text-align:right;">{{ item.rate }}</td>
+          <td style="text-align:right;">{{ item.qty }}</td>
+          <td style="text-align:right;">{{ item.amount }}</td>
+          <td style="text-align:right;">{{ item.accessory_amount }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7">No sales for this date.</td></tr>
+        {% endfor %}
+      </tbody>
+      {% if line_items %}
+      <tfoot>
+        <tr style="font-weight:bold; border-top:2px solid #999;">
+          <td colspan="5" style="text-align:right; padding-top:8px;">Subtotal:</td>
+          <td style="text-align:right; padding-top:8px;">{{ subtotal }}</td>
+          <td></td>
+        </tr>
+        <tr style="font-weight:bold;">
+          <td colspan="5" style="text-align:right;">Accessory Deduction:</td>
+          <td></td>
+          <td style="text-align:right; color:#c00;">-{{ accessory_total }}</td>
+        </tr>
+        <tr style="font-weight:bold; font-size:1.1em; border-top:2px solid #333;">
+          <td colspan="5" style="text-align:right; padding-top:10px;">Grand Total:</td>
+          <td colspan="2" style="text-align:right; padding-top:10px;">{{ grand_total }}</td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+
+  </div>{# end voucher-content #}
+
+  {# Finalize form — only shown if there are sales and voucher is not yet finalized #}
+  {% if line_items and not voucher %}
+  <div class="module">
+    <h2>Record Voucher</h2>
+    <form method="post" style="padding:10px;">
+      {% csrf_token %}
+      <div style="margin-bottom:12px;">
+        <label for="id_payment_method" style="font-weight:bold; display:block; margin-bottom:4px;">Payment Method:</label>
+        <select name="payment_method" id="id_payment_method" style="padding:6px 10px; font-size:14px;">
+          {% for value, label in payment_choices %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label for="id_payment_date" style="font-weight:bold; display:block; margin-bottom:4px;">Payment Date:</label>
+        <input type="date" name="payment_date" id="id_payment_date" value="{{ selected_date|date:'Y-m-d' }}"
+               style="padding:6px 10px; font-size:14px;">
+      </div>
+      <div style="margin-top:16px;">
+        <input type="submit" value="Record &amp; Finalize Voucher" class="default"
+               style="padding:8px 24px; font-size:14px;"
+               onclick="return confirm('Finalize voucher for {{ selected_date }}? This cannot be undone.');">
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+  {# Export buttons — shown whenever there are line items #}
+  {% if line_items %}
+  <div class="module no-print" style="margin-top:20px; padding:12px;">
+    <h2>Export</h2>
+    <div style="margin-top:12px;">
+    <button onclick="exportPNG()" class="button" style="padding:8px 20px; font-size:14px; margin-right:10px;">
+      Export as PNG
+    </button>
+    <button onclick="exportPDF()" class="button" style="padding:8px 20px; font-size:14px;">
+      Export as PDF (Print)
+    </button>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<style>
+@media print {
+  .no-print, .breadcrumbs, #header, #nav-sidebar,
+  .module:has(form[method="get"]),
+  .module:has(form[method="post"]) { display: none !important; }
+  #content-main { margin: 0; padding: 0; }
+  #voucher-content { border: none; }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+function exportPNG() {
+  var el = document.getElementById('voucher-content');
+  html2canvas(el, {scale: 2, backgroundColor: '#fff'}).then(function(canvas) {
+    var link = document.createElement('a');
+    link.download = 'voucher-{{ selected_date|date:"Y-m-d" }}.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+}
+function exportPDF() {
+  window.print();
+}
+</script>
+{% endblock %}
