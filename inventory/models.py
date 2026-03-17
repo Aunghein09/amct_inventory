@@ -1,3 +1,4 @@
+import datetime
 import io
 import uuid
 from decimal import Decimal
@@ -7,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 from PIL import Image as PILImage
 
 
@@ -122,12 +124,15 @@ class StockMove(models.Model):
         (REASON_TRANSFER_OUT, "Transfer Out"),
     )
 
+    TIER_SP1 = "sp1"
+    TIER_SP2 = "sp2"
+    PRICE_TIER_CHOICES = (
+        (TIER_SP1, "Selling Price 1"),
+        (TIER_SP2, "Selling Price 2"),
+    )
+    # Legacy aliases for backward compatibility with existing data
     TIER_RETAIL = "retail"
     TIER_WHOLESALE = "wholesale"
-    PRICE_TIER_CHOICES = (
-        (TIER_RETAIL, "Retail"),
-        (TIER_WHOLESALE, "Wholesale"),
-    )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product = models.ForeignKey(
@@ -155,6 +160,10 @@ class StockMove(models.Model):
         related_name="stock_moves_created",
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    move_date = models.DateField(
+        default=datetime.date.today,
+        help_text="Business date of this move. Defaults to today if not specified.",
+    )
     reference_id = models.CharField(max_length=120, blank=True)
     edited_at = models.DateTimeField(null=True, blank=True)
     edited_by = models.ForeignKey(
@@ -175,7 +184,7 @@ class StockMove(models.Model):
     )
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["-move_date", "-created_at"]
         constraints = [
             models.CheckConstraint(check=~Q(qty_delta=0), name="qty_delta_not_zero"),
         ]
@@ -187,6 +196,8 @@ class StockMove(models.Model):
             raise ValidationError("Sale and transfer_out qty_delta must be negative.")
 
     def save(self, *args, **kwargs):
+        if not self.move_date:
+            self.move_date = timezone.localdate()
         self.full_clean()
         super().save(*args, **kwargs)
 

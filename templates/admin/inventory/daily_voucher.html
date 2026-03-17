@@ -46,7 +46,7 @@
         <tr>
           <th>#</th>
           <th>Product</th>
-          <th>Price Tier</th>
+          <th>Price</th>
           <th style="text-align:right;">Rate</th>
           <th style="text-align:right;">Qty</th>
           <th style="text-align:right;">Amount</th>
@@ -58,7 +58,7 @@
         <tr class="{% cycle 'row1' 'row2' %}">
           <td>{{ forloop.counter }}</td>
           <td>{{ item.product.sku }} — {{ item.product.name }}</td>
-          <td>{{ item.price_tier|title }}</td>
+          <td>{{ item.price_label }}</td>
           <td style="text-align:right;">{{ item.rate }}</td>
           <td style="text-align:right;">{{ item.qty }}</td>
           <td style="text-align:right;">{{ item.amount }}</td>

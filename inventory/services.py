@@ -24,6 +24,7 @@ def record_stock_move(
     note="",
     reference_id="",
     price_tier="",
+    move_date=None,
     prevent_negative=True,
 ):
     qty_delta = int(qty_delta)
@@ -32,7 +33,7 @@ def record_stock_move(
     if prevent_negative and projected < 0:
         raise ValidationError("Stock cannot go negative.")
 
-    return StockMove.objects.create(
+    kwargs = dict(
         product=product,
         location=location,
         qty_delta=qty_delta,
@@ -42,6 +43,9 @@ def record_stock_move(
         created_by=created_by,
         reference_id=reference_id,
     )
+    if move_date:
+        kwargs["move_date"] = move_date
+    return StockMove.objects.create(**kwargs)
 
 
 @transaction.atomic

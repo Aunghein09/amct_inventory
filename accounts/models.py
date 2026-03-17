@@ -14,10 +14,12 @@ class Membership(models.Model):
     ROLE_ADMIN = "admin"
     ROLE_MANAGER = "manager"
     ROLE_STAFF = "staff"
+    ROLE_STAFF0 = "staff0"
     ROLE_CHOICES = (
         (ROLE_ADMIN, "Admin"),
         (ROLE_MANAGER, "Manager"),
         (ROLE_STAFF, "Staff"),
+        (ROLE_STAFF0, "Staff (view only)"),
     )
 
     user = models.OneToOneField(

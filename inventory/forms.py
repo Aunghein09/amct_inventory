@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django import forms
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 
@@ -121,6 +122,12 @@ class BaseStockMoveForm(forms.Form):
     product = ProductSearchField()
     location = forms.ModelChoiceField(queryset=Location.objects.none(), required=False)
     quantity = forms.IntegerField(min_value=1)
+    move_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}),
+        label="Date",
+        help_text="Leave blank for today.",
+    )
     note = forms.CharField(widget=forms.Textarea, required=False)
     reference_id = forms.CharField(max_length=120, required=False)
 
@@ -146,6 +153,7 @@ class BaseStockMoveForm(forms.Form):
             reason=self.reason,
             note=self.cleaned_data["note"],
             reference_id=self.cleaned_data["reference_id"],
+            move_date=self.cleaned_data.get("move_date"),
             created_by=self.user,
             prevent_negative=True,
         )
@@ -178,14 +186,14 @@ class StockAdjustForm(BaseStockMoveForm):
 
 
 class StockSaleForm(BaseStockMoveForm):
-    PRICE_RETAIL = "retail"
-    PRICE_WHOLESALE = "wholesale"
+    PRICE_SP1 = "sp1"
+    PRICE_SP2 = "sp2"
     PRICE_CHOICES = (
-        (PRICE_RETAIL, "Retail (selling_price1)"),
-        (PRICE_WHOLESALE, "Wholesale (selling_price2)"),
+        (PRICE_SP1, "Selling Price 1"),
+        (PRICE_SP2, "Selling Price 2"),
     )
 
-    price_tier = forms.ChoiceField(choices=PRICE_CHOICES, initial=PRICE_RETAIL)
+    price_tier = forms.ChoiceField(choices=PRICE_CHOICES, initial=PRICE_SP1)
     reason = StockMove.REASON_SALE
     quantity_sign = -1
 
@@ -196,12 +204,12 @@ class StockSaleForm(BaseStockMoveForm):
         if not product or not price_tier:
             return cleaned_data
 
-        if price_tier == self.PRICE_RETAIL:
+        if price_tier == self.PRICE_SP1:
             cleaned_data["unit_price"] = product.selling_price1
             return cleaned_data
 
         if product.selling_price2 is None:
-            self.add_error("price_tier", "This product does not have a wholesale price.")
+            self.add_error("price_tier", "This product does not have Selling Price 2.")
             return cleaned_data
 
         cleaned_data["unit_price"] = product.selling_price2
@@ -229,6 +237,7 @@ class StockSaleForm(BaseStockMoveForm):
             note=self.cleaned_data["note"],
             reference_id=self.cleaned_data["reference_id"],
             price_tier=self.cleaned_data["price_tier"],
+            move_date=self.cleaned_data.get("move_date"),
             created_by=self.user,
             prevent_negative=True,
         )

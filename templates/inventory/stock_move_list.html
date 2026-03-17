@@ -59,7 +59,7 @@
     <tbody>
       {% for move in moves %}
       <tr>
-        <td>{{ move.created_at }}</td>
+        <td>{{ move.move_date }}</td>
         <td>{{ move.product.sku }} - {{ move.product.name }}</td>
         <td>{{ move.location|default:"-" }}</td>
         <td>{{ move.qty_delta }}</td>

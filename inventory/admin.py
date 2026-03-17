@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from django.db import models
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import path, reverse
 from django.utils import timezone
@@ -87,16 +88,16 @@ class LocationAdmin(admin.ModelAdmin):
 @admin.register(StockMove)
 class StockMoveAdmin(admin.ModelAdmin):
     list_display = (
-        "created_at",
+        "move_date",
         "product",
         "location",
         "qty_delta",
         "reason",
-        "price_tier",
+        "price_tier_display",
         "created_by",
         "voided_display",
     )
-    list_filter = ("reason", "price_tier", "location", "is_voided")
+    list_filter = ("reason", "price_tier", "location", "is_voided", "move_date")
     search_fields = ("product__sku", "product__name", "reference_id", "note")
     list_select_related = ("product", "location", "created_by")
     list_per_page = 30
@@ -105,6 +106,15 @@ class StockMoveAdmin(admin.ModelAdmin):
 
     readonly_fields = ("id", "created_by", "created_at", "edited_at", "edited_by",
                         "is_voided", "voided_at", "voided_by")
+
+    PRICE_TIER_LABELS = {
+        "sp1": "SP1", "sp2": "SP2",
+        "retail": "SP2", "wholesale": "SP1",  # legacy data
+    }
+
+    def price_tier_display(self, obj):
+        return self.PRICE_TIER_LABELS.get(obj.price_tier, obj.price_tier or "")
+    price_tier_display.short_description = "Price Tier"
 
     def voided_display(self, obj):
         if obj.is_voided:
@@ -163,7 +173,8 @@ class StockMoveAdmin(admin.ModelAdmin):
             obj.is_voided = True
             obj.voided_at = timezone.now()
             obj.voided_by = request.user
-            obj.save(update_fields=["is_voided", "voided_at", "voided_by"])
+            # Use super().save() to skip full_clean() — only void fields are changing
+            models.Model.save(obj, update_fields=["is_voided", "voided_at", "voided_by"])
             messages.success(request, f"Stock move {obj} has been voided.")
         return redirect(reverse("admin:inventory_stockmove_change", args=[object_id]))
 

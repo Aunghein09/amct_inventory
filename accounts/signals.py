@@ -33,7 +33,7 @@ def sync_user_staff_and_group(sender, instance, **kwargs):
             user.save(update_fields=["is_staff", "is_superuser"])
         user.groups.add(manager_group)
     else:
-        # Staff: no admin panel access
+        # Staff / Staff0: no admin panel access
         if user.is_staff or user.is_superuser:
             user.is_staff = False
             user.is_superuser = False

@@ -137,9 +137,9 @@ def stock_move_list(request):
     date_from = request.GET.get("date_from", "")
     date_to = request.GET.get("date_to", "")
     if date_from:
-        moves = moves.filter(created_at__date__gte=date_from)
+        moves = moves.filter(move_date__gte=date_from)
     if date_to:
-        moves = moves.filter(created_at__date__lte=date_to)
+        moves = moves.filter(move_date__lte=date_to)
 
     # Summary aggregation
     summary = moves.aggregate(

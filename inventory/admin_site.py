@@ -126,8 +126,8 @@ class InventoryAdminSite(AdminSite):
                 ("name", "Name"),
                 ("size", "Size"),
                 ("cost", "Cost"),
-                ("selling_price1", "Retail"),
-                ("selling_price2", "Wholesale"),
+                ("selling_price1", "Selling Price 1"),
+                ("selling_price2", "Selling Price 2"),
                 ("current_stock", "Current Stock"),
             ],
         }
@@ -149,7 +149,7 @@ class InventoryAdminSite(AdminSite):
         sale_moves = (
             StockMove.objects.filter(
                 reason=StockMove.REASON_SALE,
-                created_at__date=selected_date,
+                move_date=selected_date,
                 is_voided=False,
             )
             .select_related("product")
@@ -161,11 +161,12 @@ class InventoryAdminSite(AdminSite):
         accessory_total = Decimal("0.00")
 
         aggregated = {}
+        SP2_TIERS = {"sp2", "retail"}  # "retail" is legacy data
         for move in sale_moves:
-            key = (move.product_id, move.price_tier or "retail")
+            key = (move.product_id, move.price_tier or "sp1")
             if key not in aggregated:
-                tier = move.price_tier or "retail"
-                if tier == "wholesale" and move.product.selling_price2 is not None:
+                tier = move.price_tier or "sp1"
+                if tier in SP2_TIERS and move.product.selling_price2 is not None:
                     rate = move.product.selling_price2
                 else:
                     rate = move.product.selling_price1
@@ -178,12 +179,14 @@ class InventoryAdminSite(AdminSite):
                 }
             aggregated[key]["qty"] += abs(move.qty_delta)
 
+        TIER_LABELS = {"sp1": "SP1", "sp2": "SP2", "retail": "SP2", "wholesale": "SP1"}
+
         for item in aggregated.values():
             amount = item["rate"] * item["qty"]
             accessory_amount = item["accessory_price"] * item["qty"]
             line_items.append({
                 "product": item["product"],
-                "price_tier": item["price_tier"],
+                "price_label": TIER_LABELS.get(item["price_tier"], item["price_tier"]),
                 "rate": item["rate"],
                 "qty": item["qty"],
                 "amount": amount,

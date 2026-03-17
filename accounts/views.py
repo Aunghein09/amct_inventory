@@ -1,8 +1,11 @@
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 
 
+@method_decorator(never_cache, name="dispatch")
 class CustomLoginView(auth_views.LoginView):
     template_name = "accounts/login.html"
 
