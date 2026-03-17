@@ -138,6 +138,10 @@ LOGOUT_REDIRECT_URL = "login"
 # ---------------------------------------------------------------------------
 # Production security (only when DEBUG=False)
 # ---------------------------------------------------------------------------
+# Session: expire after 6 hours, reset on each request
+SESSION_COOKIE_AGE = 6 * 60 * 60  # 6 hours in seconds
+SESSION_SAVE_EVERY_REQUEST = True
+
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
