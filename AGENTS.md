@@ -132,7 +132,7 @@ models.DecimalField(max_digits=10, decimal_places=2)
 - id (UUID)
 - product (FK)
 - location (nullable)
-- qty_delta (decimal)
+- qty_delta (integer)
 - reason (receive / sale / adjust / transfer_in / transfer_out)
 - price_tier (retail / wholesale, blank for non-sale moves)
 - note (optional)
@@ -248,7 +248,7 @@ Login page has two tabs:
 - **Admin tab**: authenticates and redirects to `/admin/` (Django admin panel)
 
 Role separation:
-- **Staff (member)**: can view dashboard (SKU, shop code, name, current stock) and own moves; can record receive and sale
+- **Staff (member)**: can view dashboard (SKU, shop code, name, current stock) with search/filter/sort/pagination; can view own moves with date filter and pagination; can record receive and sale via autocomplete product widget
 - **Manager**: same as staff in inventory UI; can also access Django admin panel with permissions defined by the "Manager" group
 - **Admin**: full access via Django admin panel (create/edit products, adjust stock, modify moves)
 - Even if an admin logs in via the member tab, they only see member functions
@@ -311,13 +311,13 @@ Routes:
 
 - `/accounts/login/` → tabbed login (member / admin)
 - `/accounts/logout/`
-- `/` → dashboard with computed stock (SKU, shop code, name, current stock)
-- `/moves/` → movement history filtered to logged-in member, with date filter + summary
-- `/moves/receive/` → record stock receive
-- `/moves/sale/` → record stock sale
+- `/` → dashboard with computed stock, search/filter/sort/pagination (30 per page)
+- `/moves/` → movement history filtered to logged-in member, with date filter, summary, pagination (30 per page)
+- `/moves/receive/` → record stock receive (autocomplete product widget)
+- `/moves/sale/` → record stock sale (autocomplete product widget)
 - `/moves/adjust/` → record stock adjustment (admin only)
 - `/admin/` → Django admin panel
-- `/admin/inventory/dashboard/` → inventory dashboard
+- `/admin/inventory/dashboard/` → inventory dashboard with search/filter/sort/pagination (30 per page)
 - `/admin/inventory/daily-voucher/` → daily voucher (sales reconciliation)
 
 ---
