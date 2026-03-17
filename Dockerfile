@@ -17,4 +17,4 @@ RUN SECRET_KEY=build-placeholder python manage.py collectstatic --noinput
 
 EXPOSE 8080
 
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8080", "--workers", "2", "--timeout", "120"]
+ENTRYPOINT ["./entrypoint.sh"]
