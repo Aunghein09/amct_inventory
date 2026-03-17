@@ -153,6 +153,7 @@ class InventoryAdminSite(AdminSite):
                 is_voided=False,
             )
             .select_related("product")
+            .order_by("created_at")
         )
 
         # Group by product + price_tier

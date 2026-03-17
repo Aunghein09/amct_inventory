@@ -46,7 +46,6 @@
         <tr>
           <th>#</th>
           <th>Product</th>
-          <th>Price</th>
           <th style="text-align:right;">Rate</th>
           <th style="text-align:right;">Qty</th>
           <th style="text-align:right;">Amount</th>
@@ -58,30 +57,29 @@
         <tr class="{% cycle 'row1' 'row2' %}">
           <td>{{ forloop.counter }}</td>
           <td>{{ item.product.sku }} — {{ item.product.name }}</td>
-          <td>{{ item.price_label }}</td>
           <td style="text-align:right;">{{ item.rate }}</td>
           <td style="text-align:right;">{{ item.qty }}</td>
           <td style="text-align:right;">{{ item.amount }}</td>
           <td style="text-align:right;">{{ item.accessory_amount }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="7">No sales for this date.</td></tr>
+        <tr><td colspan="6">No sales for this date.</td></tr>
         {% endfor %}
       </tbody>
       {% if line_items %}
       <tfoot>
         <tr style="font-weight:bold; border-top:2px solid #999;">
-          <td colspan="5" style="text-align:right; padding-top:8px;">Subtotal:</td>
+          <td colspan="4" style="text-align:right; padding-top:8px;">Subtotal:</td>
           <td style="text-align:right; padding-top:8px;">{{ subtotal }}</td>
           <td></td>
         </tr>
         <tr style="font-weight:bold;">
-          <td colspan="5" style="text-align:right;">Accessory Deduction:</td>
+          <td colspan="4" style="text-align:right;">Accessory Deduction:</td>
           <td></td>
           <td style="text-align:right; color:#c00;">-{{ accessory_total }}</td>
         </tr>
         <tr style="font-weight:bold; font-size:1.1em; border-top:2px solid #333;">
-          <td colspan="5" style="text-align:right; padding-top:10px;">Grand Total:</td>
+          <td colspan="4" style="text-align:right; padding-top:10px;">Grand Total:</td>
           <td colspan="2" style="text-align:right; padding-top:10px;">{{ grand_total }}</td>
         </tr>
       </tfoot>

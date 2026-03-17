@@ -5,7 +5,7 @@
 Build a single-business inventory management web app with:
 
 - Separate login paths for admin (Django admin panel) and members (inventory UI)
-- Products with cost and three selling prices (retail, wholesale, accessory)
+- Products with cost and three selling prices (SP1, SP2, accessory)
 - Stock movement ledger (receive / sell / adjust / transfer)
 - Computed current stock (not stored directly)
 - Role-based access (admin vs staff)
@@ -48,7 +48,7 @@ We use two Django apps inside one Django project.
 
 Handles:
 - Profile (display name extension of auth.User)
-- Membership (user role: admin, manager, or staff)
+- Membership (user role: admin, manager, staff, or staff0)
 - Django Group "Manager" for admin-panel permission management
 
 ### inventory app
@@ -72,7 +72,7 @@ Handles:
 
 #### Membership
 - user (OneToOne to auth.User)
-- role: `admin` | `manager` | `staff`
+- role: `admin` | `manager` | `staff` | `staff0`
 
 Note: Organization model was removed. This is a single-business app.
 
@@ -80,6 +80,7 @@ Role sync (via post_save signal on Membership):
 - admin → `is_staff=True`, `is_superuser=True`
 - manager → `is_staff=True`, `is_superuser=False`, added to "Manager" group
 - staff → `is_staff=False`, `is_superuser=False`
+- staff0 → `is_staff=False`, `is_superuser=False` (view-only — dashboard access only, no record/move actions)
 
 The "Manager" Django Group controls admin panel permissions.
 Default Manager permissions: all inventory model permissions (product, location, stockmove).
@@ -101,8 +102,8 @@ Fields:
 - custom_size (text, used when size is Custom)
 - image (ImageField, optional)
 - cost (DecimalField)
-- selling_price1 (DecimalField) → Retail price
-- selling_price2 (DecimalField, optional) → Wholesale price
+- selling_price1 (DecimalField) → Selling Price 1 (SP1)
+- selling_price2 (DecimalField, optional) → Selling Price 2 (SP2)
 - accessory_price (DecimalField, optional) → Accessory price
 - barcode (optional)
 - is_active
@@ -134,10 +135,11 @@ models.DecimalField(max_digits=10, decimal_places=2)
 - location (nullable)
 - qty_delta (integer)
 - reason (receive / sale / adjust / transfer_in / transfer_out)
-- price_tier (retail / wholesale, blank for non-sale moves)
+- price_tier (sp1 / sp2, blank for non-sale moves)
 - note (optional)
 - created_by (FK to user)
 - created_at
+- move_date (DateField, default=today — business date, allows backdated entries)
 - reference_id (optional invoice/order ID)
 - edited_at (nullable, set on edit)
 - edited_by (FK to user, nullable, set on edit)
@@ -192,15 +194,21 @@ SUM(stock_moves.qty_delta) WHERE is_voided = False GROUP BY product, location
 
 Computed via Django ORM aggregation in views.
 
+Date-based queries (move history, daily voucher) filter on `move_date`, not `created_at`.
+
 ---
 
 ## 6) Pricing Design
 
 We support three selling prices:
 
-- selling_price1 → Retail
-- selling_price2 → Wholesale (optional)
+- selling_price1 → Selling Price 1 (SP1)
+- selling_price2 → Selling Price 2 (SP2, optional)
 - accessory_price → Accessory (optional)
+
+UI labels use "Selling Price 1" / "Selling Price 2" (no retail/wholesale terminology).
+StockMove `price_tier` values in DB are `sp1` / `sp2`.
+Legacy data may contain `retail` / `wholesale` values — these are mapped to SP1/SP2 at display time.
 
 This allows:
 - Different customer types
@@ -215,11 +223,11 @@ Inventory valuation:
 
 Current Stock × cost
 
-Retail potential revenue:
+SP1 potential revenue:
 
 Current Stock × selling_price1
 
-Wholesale potential revenue:
+SP2 potential revenue:
 
 Current Stock × selling_price2
 
@@ -248,6 +256,7 @@ Login page has two tabs:
 - **Admin tab**: authenticates and redirects to `/admin/` (Django admin panel)
 
 Role separation:
+- **Staff0 (view only)**: can view dashboard only; cannot record moves, view move history, or access any action pages; nav links hidden
 - **Staff (member)**: can view dashboard (SKU, shop code, name, current stock) with search/filter/sort/pagination; can view own moves with date filter and pagination; can record receive and sale via autocomplete product widget
 - **Manager**: same as staff in inventory UI; can also access Django admin panel with permissions defined by the "Manager" group
 - **Admin**: full access via Django admin panel (create/edit products, adjust stock, modify moves)
@@ -287,6 +296,8 @@ The system must allow:
 - All financial fields use Decimal
 - All operations are atomic
 - Stock move edits tracked (edited_at / edited_by)
+- Session cookie expires after 6 hours (rolling — resets on each request)
+- Login view uses `@never_cache` to prevent stale CSRF tokens after logout
 
 ---
 
@@ -303,9 +314,11 @@ static/          static assets
 Operational defaults:
 
 - `DATABASE_URL` env var enables Supabase Postgres
-- SQLite fallback for local bootstrap
+- SQLite fallback when `DATABASE_URL` is empty or unset
+- To run local dev server with SQLite: `DATABASE_URL="" python manage.py runserver`
 - Stock moves editable by admin with edit tracking
 - Current stock is computed via aggregation
+- StockMove ordering: `-move_date`, `-created_at`
 
 Routes:
 
@@ -366,9 +379,9 @@ WhiteNoise serves compressed, cache-busted static files directly from Django.
 
 ### Media files (product images)
 
-Media files are stored on the container filesystem (ephemeral).
-They will be lost on each redeploy. For production with product images,
-add `django-storages` + Google Cloud Storage as a follow-up.
+Media files use Google Cloud Storage when `GS_BUCKET_NAME` env var is set
+(via `django-storages` GoogleCloudStorage backend).
+Otherwise, files are stored on local filesystem (ephemeral on Cloud Run).
 
 ### Initial GCP setup (one-time)
 
