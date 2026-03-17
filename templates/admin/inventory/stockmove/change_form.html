@@ -5,8 +5,28 @@
   {% if show_edit_button %}
     <div class="submit-row">
       <a href="{{ edit_url }}" class="button" style="padding:10px 20px;">Edit this move</a>
+      {% if show_void_button %}
+        <form method="post" action="{{ void_url }}" style="display:inline; margin:0;"
+              onsubmit="return confirm('Are you sure you want to void this stock move? This cannot be undone.');">
+          {% csrf_token %}
+          <button type="submit" class="button" style="padding:10px 20px; background:#ba2121; color:#fff;">
+            Void this move
+          </button>
+        </form>
+      {% endif %}
     </div>
   {% else %}
     {{ block.super }}
+    {% if show_void_button %}
+      <div class="submit-row">
+        <form method="post" action="{{ void_url }}" style="display:inline; margin:0;"
+              onsubmit="return confirm('Are you sure you want to void this stock move? This cannot be undone.');">
+          {% csrf_token %}
+          <button type="submit" class="button" style="padding:10px 20px; background:#ba2121; color:#fff;">
+            Void this move
+          </button>
+        </form>
+      </div>
+    {% endif %}
   {% endif %}
 {% endblock %}

@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Sum
@@ -8,11 +6,11 @@ from .models import StockMove
 
 
 def get_current_stock(product, location=None):
-    moves = StockMove.objects.filter(product=product)
+    moves = StockMove.objects.filter(product=product, is_voided=False)
     if location is not None:
         moves = moves.filter(location=location)
     total = moves.aggregate(total_qty=Sum("qty_delta"))["total_qty"]
-    return total if total is not None else Decimal("0.00")
+    return total if total is not None else 0
 
 
 @transaction.atomic
@@ -28,7 +26,7 @@ def record_stock_move(
     price_tier="",
     prevent_negative=True,
 ):
-    qty_delta = Decimal(qty_delta)
+    qty_delta = int(qty_delta)
     current = get_current_stock(product=product, location=location)
     projected = current + qty_delta
     if prevent_negative and projected < 0:
@@ -57,7 +55,7 @@ def transfer_stock(
     note="",
     reference_id="",
 ):
-    quantity = Decimal(quantity)
+    quantity = int(quantity)
     if quantity <= 0:
         raise ValidationError("Transfer quantity must be positive.")
     if from_location == to_location:

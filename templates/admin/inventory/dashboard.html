@@ -22,19 +22,60 @@
     </table>
   </div>
 
+  <div class="module" style="margin-bottom:20px;">
+    <h2>Filters</h2>
+    <form method="get" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; padding:10px;">
+      <div>
+        <label style="display:block; font-size:11px; color:#666; margin-bottom:2px;">Search</label>
+        <input type="text" name="q" value="{{ search_q }}" placeholder="SKU, shop code, or name" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; width:220px;">
+      </div>
+      <div>
+        <label style="display:block; font-size:11px; color:#666; margin-bottom:2px;">Size</label>
+        <select name="size" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px;">
+          <option value="">All sizes</option>
+          {% for val, label in size_choices %}
+            <option value="{{ val }}" {% if size_filter == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display:block; font-size:11px; color:#666; margin-bottom:2px;">Stock</label>
+        <select name="stock" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px;">
+          <option value="">All</option>
+          <option value="out" {% if stock_status == "out" %}selected{% endif %}>Out of stock (0)</option>
+          <option value="low" {% if stock_status == "low" %}selected{% endif %}>Low stock (&le; 5)</option>
+          <option value="in" {% if stock_status == "in" %}selected{% endif %}>In stock (&gt; 5)</option>
+        </select>
+      </div>
+      <div>
+        <button type="submit" style="padding:6px 16px; background:#417690; color:#fff; border:none; border-radius:4px; cursor:pointer;">Filter</button>
+        <a href="?" style="padding:6px 12px; color:#666; text-decoration:none;">Clear</a>
+      </div>
+    </form>
+  </div>
+
   <div class="module">
-    <h2>Current Stock (Computed)</h2>
+    <h2>Current Stock (Computed) — {{ product_count }} result{{ product_count|pluralize }}</h2>
     <table id="result_list">
       <thead>
         <tr>
-          <th>SKU</th>
-          <th>Shop Code</th>
-          <th>Name</th>
-          <th>Size</th>
-          <th>Cost</th>
-          <th>Retail</th>
-          <th>Wholesale</th>
-          <th>Current Stock</th>
+          {% with base_qs=filter_only_qs %}
+          {% for col_field, col_label in sortable_columns %}
+            <th>
+              {% if col_field %}
+                <a href="?sort={{ col_field }}&dir={% if sort_field == col_field and sort_dir == 'asc' %}desc{% else %}asc{% endif %}{% if base_qs %}&{{ base_qs }}{% endif %}"
+                   style="color:var(--body-quiet-color); text-decoration:none; white-space:nowrap;">
+                  {{ col_label }}
+                  {% if sort_field == col_field %}
+                    {% if sort_dir == 'asc' %}&#9650;{% else %}&#9660;{% endif %}
+                  {% endif %}
+                </a>
+              {% else %}
+                {{ col_label }}
+              {% endif %}
+            </th>
+          {% endfor %}
+          {% endwith %}
         </tr>
       </thead>
       <tbody>
@@ -54,6 +95,32 @@
         {% endfor %}
       </tbody>
     </table>
+
+    {% if page_obj.has_other_pages %}
+    <p class="paginator" style="margin-top:10px; text-align:right;">
+      {% if page_obj.has_previous %}
+        <a href="?page=1{% if filter_qs %}&{{ filter_qs }}{% endif %}" style="display:inline-block; padding:3px 8px; margin:0 1px; border-radius:3px; text-decoration:none;">Start</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if filter_qs %}&{{ filter_qs }}{% endif %}" style="display:inline-block; padding:3px 8px; margin:0 1px; border-radius:3px; text-decoration:none;">Prev</a>
+      {% else %}
+        <span style="display:inline-block; padding:3px 8px; margin:0 1px; color:#999;">Start</span>
+        <span style="display:inline-block; padding:3px 8px; margin:0 1px; color:#999;">Prev</span>
+      {% endif %}
+      {% for num in page_obj.paginator.page_range %}
+        {% if num == page_obj.number %}
+          <span style="display:inline-block; padding:3px 8px; margin:0 1px; border-radius:3px; background:#e95420; color:#fff; font-weight:bold;">{{ num }}</span>
+        {% else %}
+          <a href="?page={{ num }}{% if filter_qs %}&{{ filter_qs }}{% endif %}" style="display:inline-block; padding:3px 8px; margin:0 1px; border-radius:3px; text-decoration:none;">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if filter_qs %}&{{ filter_qs }}{% endif %}" style="display:inline-block; padding:3px 8px; margin:0 1px; border-radius:3px; text-decoration:none;">Next</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if filter_qs %}&{{ filter_qs }}{% endif %}" style="display:inline-block; padding:3px 8px; margin:0 1px; border-radius:3px; text-decoration:none;">End</a>
+      {% else %}
+        <span style="display:inline-block; padding:3px 8px; margin:0 1px; color:#999;">Next</span>
+        <span style="display:inline-block; padding:3px 8px; margin:0 1px; color:#999;">End</span>
+      {% endif %}
+    </p>
+    {% endif %}
   </div>
 
 </div>

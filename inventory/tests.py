@@ -26,23 +26,23 @@ class InventoryLedgerTests(TestCase):
     def test_current_stock_comes_from_move_sum(self):
         record_stock_move(
             product=self.product,
-            qty_delta=Decimal("10.00"),
+            qty_delta=10,
             reason=StockMove.REASON_RECEIVE,
             created_by=self.user,
         )
         record_stock_move(
             product=self.product,
-            qty_delta=Decimal("-3.00"),
+            qty_delta=-3,
             reason=StockMove.REASON_SALE,
             created_by=self.user,
         )
-        self.assertEqual(get_current_stock(product=self.product), Decimal("7.00"))
+        self.assertEqual(get_current_stock(product=self.product), 7)
 
     def test_sale_cannot_make_stock_negative(self):
         with self.assertRaises(ValidationError):
             record_stock_move(
                 product=self.product,
-                qty_delta=Decimal("-1.00"),
+                qty_delta=-1,
                 reason=StockMove.REASON_SALE,
                 created_by=self.user,
             )
@@ -50,27 +50,27 @@ class InventoryLedgerTests(TestCase):
     def test_stock_move_editable_by_admin(self):
         move = record_stock_move(
             product=self.product,
-            qty_delta=Decimal("5.00"),
+            qty_delta=5,
             reason=StockMove.REASON_RECEIVE,
             created_by=self.user,
         )
-        move.qty_delta = Decimal("8.00")
+        move.qty_delta = 8
         move.save()
         move.refresh_from_db()
-        self.assertEqual(move.qty_delta, Decimal("8.00"))
+        self.assertEqual(move.qty_delta, 8)
 
     def test_sale_form_saves_selected_price_tier_in_note(self):
         record_stock_move(
             product=self.product,
-            qty_delta=Decimal("10.00"),
+            qty_delta=10,
             reason=StockMove.REASON_RECEIVE,
             created_by=self.user,
         )
         form = StockSaleForm(
             data={
-                "product": str(self.product.pk),
+                "product": f"{self.product.sku} - {self.product.name}",
                 "location": "",
-                "quantity": "2.00",
+                "quantity": "2",
                 "price_tier": "retail",
                 "note": "",
                 "reference_id": "INV-001",
@@ -93,9 +93,9 @@ class InventoryLedgerTests(TestCase):
         )
         form = StockSaleForm(
             data={
-                "product": str(product_without_wholesale.pk),
+                "product": f"{product_without_wholesale.sku} - {product_without_wholesale.name}",
                 "location": "",
-                "quantity": "1.00",
+                "quantity": "1",
                 "price_tier": "wholesale",
                 "note": "",
                 "reference_id": "",

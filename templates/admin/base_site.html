@@ -1,0 +1,14 @@
+{% extends "admin/base.html" %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+.paginator .this-page {
+  background: #e95420;
+  color: #fff !important;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+</style>
+{% endblock %}

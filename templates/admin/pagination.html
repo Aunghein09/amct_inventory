@@ -1,0 +1,40 @@
+{% load i18n %}
+{% load inventory_tags %}
+<p class="paginator" style="text-align:right;">
+{% if pagination_required %}
+  {% if cl.page_num > 1 %}
+    {% admin_page_url cl 1 as start_url %}
+    <a href="{{ start_url }}" style="display:inline-block; padding:3px 8px; margin:0 1px; border-radius:3px; text-decoration:none;">Start</a>
+    {% admin_page_url cl cl.page_num|add:"-1" as prev_url %}
+    <a href="{{ prev_url }}" style="display:inline-block; padding:3px 8px; margin:0 1px; border-radius:3px; text-decoration:none;">Prev</a>
+  {% else %}
+    <span style="display:inline-block; padding:3px 8px; margin:0 1px; color:#999;">Start</span>
+    <span style="display:inline-block; padding:3px 8px; margin:0 1px; color:#999;">Prev</span>
+  {% endif %}
+
+  {% for i in page_range %}
+    {% if i == cl.page_num %}
+      <span style="display:inline-block; padding:3px 8px; margin:0 1px; border-radius:3px; background:#e95420; color:#fff; font-weight:bold;">{{ i }}</span>
+    {% elif i == cl.paginator.ELLIPSIS %}
+      <span style="display:inline-block; padding:3px 8px; margin:0 1px;">...</span>
+    {% else %}
+      {% admin_page_url cl i as page_url %}
+      <a href="{{ page_url }}" style="display:inline-block; padding:3px 8px; margin:0 1px; border-radius:3px; text-decoration:none;">{{ i }}</a>
+    {% endif %}
+  {% endfor %}
+
+  {% if cl.page_num < cl.paginator.num_pages %}
+    {% admin_page_url cl cl.page_num|add:"1" as next_url %}
+    <a href="{{ next_url }}" style="display:inline-block; padding:3px 8px; margin:0 1px; border-radius:3px; text-decoration:none;">Next</a>
+    {% admin_page_url cl cl.paginator.num_pages as end_url %}
+    <a href="{{ end_url }}" style="display:inline-block; padding:3px 8px; margin:0 1px; border-radius:3px; text-decoration:none;">End</a>
+  {% else %}
+    <span style="display:inline-block; padding:3px 8px; margin:0 1px; color:#999;">Next</span>
+    <span style="display:inline-block; padding:3px 8px; margin:0 1px; color:#999;">End</span>
+  {% endif %}
+  &mdash;
+{% endif %}
+{{ cl.result_count }} {% if cl.result_count == 1 %}{{ cl.opts.verbose_name }}{% else %}{{ cl.opts.verbose_name_plural }}{% endif %}
+{% if show_all_url %}<a href="{{ show_all_url }}" class="showall">{% translate 'Show all' %}</a>{% endif %}
+{% if cl.formset and cl.result_count %}<input type="submit" name="_save" class="default" value="{% translate 'Save' %}">{% endif %}
+</p>

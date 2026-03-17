@@ -141,13 +141,18 @@ models.DecimalField(max_digits=10, decimal_places=2)
 - reference_id (optional invoice/order ID)
 - edited_at (nullable, set on edit)
 - edited_by (FK to user, nullable, set on edit)
+- is_voided (boolean, default False)
+- voided_at (nullable, set on void)
+- voided_by (FK to user, nullable, set on void)
 
 Rules:
 
 - Stock moves are editable by admin via the Django admin panel.
 - Every edit records edited_at and edited_by.
-- Deletion of stock moves is not allowed.
-- Members cannot edit stock moves (read-only in member UI).
+- Stock moves use soft delete (void) instead of hard delete.
+- Voided moves remain in DB but are excluded from all stock calculations.
+- Void is performed via admin action; records voided_at and voided_by.
+- Members cannot edit or void stock moves (read-only in member UI).
 
 ---
 
@@ -179,11 +184,11 @@ Rules:
 
 Current stock per product:
 
-SUM(stock_moves.qty_delta)
+SUM(stock_moves.qty_delta) WHERE is_voided = False
 
 Current stock per product per location:
 
-SUM(stock_moves.qty_delta) GROUP BY product, location
+SUM(stock_moves.qty_delta) WHERE is_voided = False GROUP BY product, location
 
 Computed via Django ORM aggregation in views.
 
@@ -231,7 +236,8 @@ selling_priceX - cost
 - Prevent negative stock at application level
 - Validate selling_price ≥ cost (enforced in model clean)
 - Stock moves editable by admin only; edits tracked with edited_at/edited_by
-- Stock moves cannot be deleted
+- Stock moves use soft delete (void); voided moves excluded from stock calculations
+- Void tracked with is_voided/voided_at/voided_by
 
 ---
 

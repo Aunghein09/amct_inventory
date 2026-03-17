@@ -40,7 +40,7 @@
     </div>
     <div class="card" style="margin-top:0;">
       <strong>Net Change:</strong> {{ summary.net_change }}<br>
-      <strong>Moves:</strong> {{ moves|length }}
+      <strong>Moves:</strong> {{ move_count }}
     </div>
   </div>
 
@@ -72,5 +72,34 @@
       {% endfor %}
     </tbody>
   </table>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <nav style="display:flex;justify-content:center;gap:0.35rem;flex-wrap:wrap;margin-top:1.5rem;">
+    {% if page_obj.has_previous %}
+      <a href="?page=1{% if filter_qs %}&{{ filter_qs }}{% endif %}"
+         style="padding:0.4rem 0.7rem;border:1px solid #ccc;border-radius:4px;text-decoration:none;color:var(--brand);">Start</a>
+      <a href="?page={{ page_obj.previous_page_number }}{% if filter_qs %}&{{ filter_qs }}{% endif %}"
+         style="padding:0.4rem 0.7rem;border:1px solid #ccc;border-radius:4px;text-decoration:none;color:var(--brand);">Prev</a>
+    {% endif %}
+
+    {% for i in elided_page_range %}
+      {% if i == page_obj.paginator.ELLIPSIS %}
+        <span style="padding:0.4rem 0.5rem;color:#999;">&hellip;</span>
+      {% elif i == page_obj.number %}
+        <span style="padding:0.4rem 0.7rem;border:1px solid var(--brand);border-radius:4px;background:var(--brand);color:#fff;font-weight:bold;">{{ i }}</span>
+      {% else %}
+        <a href="?page={{ i }}{% if filter_qs %}&{{ filter_qs }}{% endif %}"
+           style="padding:0.4rem 0.7rem;border:1px solid #ccc;border-radius:4px;text-decoration:none;color:var(--brand);">{{ i }}</a>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if filter_qs %}&{{ filter_qs }}{% endif %}"
+         style="padding:0.4rem 0.7rem;border:1px solid #ccc;border-radius:4px;text-decoration:none;color:var(--brand);">Next</a>
+      <a href="?page={{ page_obj.paginator.num_pages }}{% if filter_qs %}&{{ filter_qs }}{% endif %}"
+         style="padding:0.4rem 0.7rem;border:1px solid #ccc;border-radius:4px;text-decoration:none;color:var(--brand);">End</a>
+    {% endif %}
+  </nav>
+  {% endif %}
 </section>
 {% endblock %}

@@ -140,7 +140,7 @@ class StockMove(models.Model):
         null=True,
         blank=True,
     )
-    qty_delta = models.DecimalField(max_digits=12, decimal_places=2)
+    qty_delta = models.IntegerField()
     reason = models.CharField(max_length=20, choices=REASON_CHOICES)
     price_tier = models.CharField(
         max_length=20, choices=PRICE_TIER_CHOICES, blank=True,
@@ -163,6 +163,15 @@ class StockMove(models.Model):
         null=True,
         blank=True,
         related_name="stock_moves_edited",
+    )
+    is_voided = models.BooleanField(default=False)
+    voided_at = models.DateTimeField(null=True, blank=True)
+    voided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="stock_moves_voided",
     )
 
     class Meta:

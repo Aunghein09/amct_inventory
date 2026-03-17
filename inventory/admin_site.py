@@ -3,8 +3,9 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.admin import AdminSite
+from django.core.paginator import Paginator
 from django.contrib.admin.apps import AdminConfig
-from django.db.models import DecimalField, Sum, Value
+from django.db.models import IntegerField, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
@@ -41,24 +42,94 @@ class InventoryAdminSite(AdminSite):
     def inventory_dashboard_view(self, request):
         from inventory.models import Product, StockMove
 
+        SORTABLE_FIELDS = {"sku", "shop_code", "name", "size", "cost", "selling_price1", "selling_price2", "current_stock"}
+
         stock_rows = (
             Product.objects.filter(is_active=True)
             .annotate(
                 current_stock=Coalesce(
-                    Sum("stock_moves__qty_delta"),
-                    Value(Decimal("0.00")),
-                    output_field=DecimalField(max_digits=12, decimal_places=2),
+                    Sum("stock_moves__qty_delta", filter=Q(stock_moves__is_voided=False)),
+                    Value(0),
+                    output_field=IntegerField(),
                 )
             )
-            .order_by("name")
         )
+
+        # --- Sorting ---
+        sort = request.GET.get("sort", "name")
+        direction = request.GET.get("dir", "asc")
+        sort_field = sort if sort in SORTABLE_FIELDS else "name"
+        sort_dir = direction if direction in ("asc", "desc") else "asc"
+        order_prefix = "-" if sort_dir == "desc" else ""
+        stock_rows = stock_rows.order_by(f"{order_prefix}{sort_field}")
+
+        # --- Filters ---
+        search_q = request.GET.get("q", "").strip()
+        if search_q:
+            stock_rows = stock_rows.filter(
+                Q(sku__icontains=search_q)
+                | Q(shop_code__icontains=search_q)
+                | Q(name__icontains=search_q)
+            )
+
+        size_filter = request.GET.get("size", "")
+        if size_filter:
+            stock_rows = stock_rows.filter(size=size_filter)
+
+        stock_status = request.GET.get("stock", "")
+        if stock_status == "out":
+            stock_rows = stock_rows.filter(current_stock=0)
+        elif stock_status == "low":
+            stock_rows = stock_rows.filter(current_stock__gt=0, current_stock__lte=5)
+        elif stock_status == "in":
+            stock_rows = stock_rows.filter(current_stock__gt=5)
+
+        # Build query strings for links
+        from django.http import QueryDict
+        filter_params = QueryDict(mutable=True)
+        if search_q:
+            filter_params["q"] = search_q
+        if size_filter:
+            filter_params["size"] = size_filter
+        if stock_status:
+            filter_params["stock"] = stock_status
+        # filter_only_qs: used by sort header links (no sort/dir)
+        filter_only_qs = filter_params.urlencode()
+        # filter_qs: used by pagination links (includes sort/dir)
+        if sort_field != "name" or sort_dir != "asc":
+            filter_params["sort"] = sort_field
+            filter_params["dir"] = sort_dir
+        filter_qs = filter_params.urlencode()
+
+        paginator = Paginator(stock_rows, 30)
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
 
         context = {
             **self.each_context(request),
             "title": "Inventory Dashboard",
-            "stock_rows": stock_rows,
+            "stock_rows": page_obj,
+            "page_obj": page_obj,
             "product_count": stock_rows.count(),
-            "move_count": StockMove.objects.count(),
+            "move_count": StockMove.objects.filter(is_voided=False).count(),
+            "search_q": search_q,
+            "size_filter": size_filter,
+            "size_choices": Product.SIZE_CHOICES,
+            "stock_status": stock_status,
+            "filter_qs": filter_qs,
+            "filter_only_qs": filter_only_qs,
+            "sort_field": sort_field,
+            "sort_dir": sort_dir,
+            "sortable_columns": [
+                ("sku", "SKU"),
+                ("shop_code", "Shop Code"),
+                ("name", "Name"),
+                ("size", "Size"),
+                ("cost", "Cost"),
+                ("selling_price1", "Retail"),
+                ("selling_price2", "Wholesale"),
+                ("current_stock", "Current Stock"),
+            ],
         }
         return TemplateResponse(request, "admin/inventory/dashboard.html", context)
 
@@ -79,6 +150,7 @@ class InventoryAdminSite(AdminSite):
             StockMove.objects.filter(
                 reason=StockMove.REASON_SALE,
                 created_at__date=selected_date,
+                is_voided=False,
             )
             .select_related("product")
         )
@@ -101,7 +173,7 @@ class InventoryAdminSite(AdminSite):
                     "product": move.product,
                     "price_tier": tier,
                     "rate": rate,
-                    "qty": Decimal("0.00"),
+                    "qty": 0,
                     "accessory_price": move.product.accessory_price or Decimal("0.00"),
                 }
             aggregated[key]["qty"] += abs(move.qty_delta)
