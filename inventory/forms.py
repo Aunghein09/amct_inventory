@@ -140,7 +140,13 @@ class BaseStockMoveForm(forms.Form):
         qs = Product.objects.filter(is_active=True)
         self.fields["product"].queryset = qs
         self.fields["product"].widget.queryset = qs
-        self.fields["location"].queryset = Location.objects.all()
+        location_qs = Location.objects.all()
+        self.fields["location"].queryset = location_qs
+
+        if not self.is_bound:
+            default_location = location_qs.filter(name__iexact="North dagon").first()
+            if default_location is not None:
+                self.initial.setdefault("location", default_location.pk)
 
     def save(self):
         if self.reason is None:
@@ -196,6 +202,11 @@ class StockSaleForm(BaseStockMoveForm):
     price_tier = forms.ChoiceField(choices=PRICE_CHOICES, initial=PRICE_SP1)
     reason = StockMove.REASON_SALE
     quantity_sign = -1
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.is_bound:
+            self.initial.setdefault("price_tier", self.PRICE_SP1)
 
     def clean(self):
         cleaned_data = super().clean()
