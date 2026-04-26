@@ -6,12 +6,14 @@
         var priceTierRow = document.querySelector('.field-price_tier');
         if (!reasonField || !priceTierRow) return;
 
+        var priceTierField = document.getElementById('id_price_tier');
         if (reasonField.value === 'sale') {
             priceTierRow.style.display = '';
+            if (priceTierField && !priceTierField.value) {
+                priceTierField.value = 'sp1';
+            }
         } else {
             priceTierRow.style.display = 'none';
-            // Clear the value when hidden
-            var priceTierField = document.getElementById('id_price_tier');
             if (priceTierField) priceTierField.value = '';
         }
     }
