@@ -190,6 +190,14 @@ class StockMoveAdmin(admin.ModelAdmin):
             obj.edited_by = request.user
         super().save_model(request, obj, form, change)
 
+    def get_changeform_initial_data(self, request):
+        defaults = super().get_changeform_initial_data(request)
+        default_loc = Location.objects.filter(name__iexact="North dagon").first()
+        if default_loc:
+            defaults["location"] = default_loc.pk
+        defaults.setdefault("price_tier", "sp1")
+        return defaults
+
     class Media:
         js = ("admin/js/stockmove_price_tier.js",)
 
